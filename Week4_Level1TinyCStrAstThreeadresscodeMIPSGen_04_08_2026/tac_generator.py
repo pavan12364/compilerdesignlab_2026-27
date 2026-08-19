@@ -3,9 +3,9 @@ TinyCStr Level 1 -- AST to Three-Address Code (triple form) generator.
 
 
 This walks a Function' statement AST and builds a
-TripleProgram (see three_address_code.py).
+TripleTAC (see three_address_code.py).
 with triples, an intermediate result's "name" is just
-whatever index TripleProgram.append() gives it, so there's nothing to
+whatever index TripleTAC.append() gives it, so there's nothing to
 allocate.
 """
 from ast_nodes import Num, Var, Assign, Print, BinOp
@@ -82,7 +82,7 @@ class TACGenerator:
             return node.name
         if isinstance(node,BinOp):
             left = self.gen_expr(node.left)
-            right = self.gen.expr(node.right)
+            right = self.gen_expr(node.right)
             return self.program.append(BinOpTriple(node.op, left , right))
         #raise NotImplementedError("implement TACGenerator.gen_expr()")
 

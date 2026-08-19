@@ -96,7 +96,7 @@ class MIPSGenerator:
         offset=self.symbol_table.getSymbol(name).getOffset()
         return f"{offset}($fp)"
 
-        #raise NotImplementedError("implement MIPSGenerator.resolve_address()")
+        raise NotImplementedError("implement MIPSGenerator.resolve_address()")
 
     def load(self, operand, reg):
         """
@@ -126,6 +126,7 @@ class MIPSGenerator:
         """
         self.addMIPS(f"sw {reg},{self.resolve_address(name)}")
         self.deallocate_register(reg)
+
         #raise NotImplementedError("implement MIPSGenerator.store()")
 
     def gen_instr(self, triple):
@@ -169,7 +170,7 @@ class MIPSGenerator:
             else:
                 src1 = self.allocate_registers()
                 self.load(triple.arg1, src1)
-                
+
             if isinstance(triple.arg2, TripleRef):
                 src2 = self.triple_index_to_reg[triple.arg2.index]
             else:
@@ -177,13 +178,14 @@ class MIPSGenerator:
                 self.load(triple.arg2, src2)
 
             dest = self.allocate_registers()
-            
+
             self.addMIPS(f"{MIPS_OP[triple.op]} {dest}, {src1}, {src2}")
             self.triple_index_to_reg[triple.index] = dest
             if not isinstance(triple.arg1, TripleRef):
                 self.deallocate_register(src1)
             if not isinstance(triple.arg2, TripleRef):
                 self.deallocate_register(src2)
+
         elif isinstance(triple,AssignTriple):
             if isinstance(triple.arg1, TripleRef):
                 src = self.triple_index_to_reg[triple.arg1.index]
@@ -191,14 +193,21 @@ class MIPSGenerator:
                 src = self.allocate_registers()
                 self.load(triple.arg1, src)
             self.store(src, triple.dest)
-             if isinstance(triple, PrintTriple):
-                 self.addMIPS(f"move $a0, {reg}")
-                 self.addMIPS("li $v0, 1")
-                 self.addMIPS("syscall")
 
+        elif isinstance(triple, PrintTriple):
+            if isinstance(triple.arg1, TripleRef):
+                reg = self.triple_index_to_reg[triple.arg1.index]
+                reg_fresh = False
+            else:
+                reg = self.allocate_registers()
+                self.load(triple.arg1, reg)
+                reg_fresh = True
 
+            self.addMIPS(f"move $a0, {reg}")
+            self.addMIPS("li $v0, 1")
+            self.addMIPS("syscall")
+           # self.deallocate_register(triple.arg1)
 
-            
         #raise NotImplementedError("implement MIPSGenerator.gen_instr()")
 
     # ------------------------------------------------------------------
@@ -245,3 +254,4 @@ class MIPSGenerator:
         lines = [".text", ".globl main", "main:"]
         lines.extend(f"    {line}" for line in self.mips_lines)
         return "\n".join(lines) + "\n"
+
